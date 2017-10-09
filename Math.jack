@@ -1,0 +1,152 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/* 
+ Chapter No. 12 – Project No.12 
+
+ Programmer: Roman Lapshuk 
+
+ Date Last Modified: May 6, 2015
+
+*/
+
+/**
+ * A basic math library.
+ */
+class Math {
+    //static variable that holds an array with different powers of 2 up to 16
+    //(depends) on max computer's words size
+    static Array POWERS_OF_TWO;
+    //hold max power
+    static int POWERS;
+
+    /** Initializes the library. */
+    function void init() {
+        //initialize max power allowed
+        let POWERS = 16;
+        //initializing the array of a size of max power
+        let POWERS_OF_TWO = Array.new(POWERS);
+
+        let POWERS_OF_TWO[0] = 1;
+        let POWERS_OF_TWO[1] = 2;
+        let POWERS_OF_TWO[2] = 4;
+        let POWERS_OF_TWO[3] = 8;
+        let POWERS_OF_TWO[4] = 16;
+        let POWERS_OF_TWO[5] = 32;
+        let POWERS_OF_TWO[6] = 64;
+        let POWERS_OF_TWO[7] = 128;
+        let POWERS_OF_TWO[8] = 256;
+        let POWERS_OF_TWO[9] = 512;
+        let POWERS_OF_TWO[10] = 1024;
+        let POWERS_OF_TWO[11] = 2048;
+        let POWERS_OF_TWO[12] = 4096;
+        let POWERS_OF_TWO[13] = 8192;
+        let POWERS_OF_TWO[14] = 16384;
+        let POWERS_OF_TWO[15] = 32767 + 1;
+        return;
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+        if (x < 0) {
+            return -1 * x;//multiply by -1 if number is negative
+        } else { 
+            return x;
+        }
+    }
+
+    /** Returns the product of x and y. */
+    function int multiply(int x, int y) {
+    var int sum, shiftedX, j;
+        //if one of numbers is zero automaticaly return 0
+        if ((x = 0) | (y = 0)) {
+            return 0;
+        }
+        let sum = 0;
+        let shiftedX = x;
+        let j = 0;
+        //loop until i is less then max bits
+        while (j < POWERS) {
+            //if j-th bit of y is 1
+            if (POWERS_OF_TWO[j] & y) {
+            let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let j = j + 1;
+        }
+        return sum;
+    }
+    /** Returns the integer part of x/y. */
+    function int divide(int x, int y) {
+        var int posX, posY, q, result;
+        //check for devision by zero
+        if(y = 0) {
+            do Sys.error(3);
+        }
+        //get absolute value of x and y
+        let posX = Math.abs(x);
+        let posY = Math.abs(y);
+
+        //if denominator larger return zero
+        if( posY > posX ) {
+            return 0;
+        }
+        //recursive call
+        let q = Math.divide(posX, posY + posY);
+
+        if (posX - ((q + q) * posY) < posY ) {
+            let result = q + q;
+        } else {
+            let result = q + q + 1;
+        }
+        //inverse result if one of x or y is negative
+        if (~(((x > 0) & (y > 0)) | ((x < 0) & (y < 0)))) {
+            return -result;
+        } else {   
+            return result;
+        }
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int y, j, sum, square;
+        if (x < 0) {
+        // Cannot compute square root of a negative number
+            do Sys.error(4);
+        }
+
+        let y = 0;
+        let j = 7;//(16 bit / 2) - 1 
+        while (~(j < 0)) { // j >= 0
+            let sum = y + POWERS_OF_TWO[j];
+            let square = Math.multiply(sum, sum);
+            // sum^2 <= x
+            if (~(square > x) & (square > 0)) { 
+                let y = sum;
+            }
+            let j = j - 1;
+        }
+
+        return y;
+    }
+
+    /** Returns the greater number. */
+    function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    /** Returns the smaller number. */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+}

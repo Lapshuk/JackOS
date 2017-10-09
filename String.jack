@@ -1,0 +1,205 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/String.jack
+/* 
+ Chapter No. 12 – Project No.12 
+
+ Programmer: Roman Lapshuk 
+
+ Date Last Modified: May 6, 2015
+
+*/
+/**
+ * Represents a String object. Implements the String type.
+ */
+class String {
+
+    field Array chars;
+    field int maxLength;
+    field int length;
+
+    /** Constructs a new empty String with a maximum length of maxLength. */
+    constructor String new(int maxLengthArg) {
+        //if length is negative throw error
+        if (maxLengthArg < 0) {
+            do Sys.error(14);
+        }
+        //check if length is greater then 0 to create an array of chars
+        if (maxLengthArg > 0) {
+            let chars = Array.new(maxLengthArg);
+        } else {
+            let chars = null;
+        }
+        let maxLength = maxLengthArg;
+        let length = 0;
+        return this;
+    }
+
+    /** De-allocates the string and frees its space. */
+    method void dispose() {
+        if (~(chars = null)) {
+            do chars.dispose();
+        }
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Returns the current length of this String. */
+    method int length() {
+        return length;
+    }
+
+    /** Returns the character at location j. */
+    method char charAt(int j) {
+        if (j > (length - 1)) {
+            //if requested index does not exsit throw "String index out of bounds"
+            do Sys.error(15);
+        }
+        return chars[j];
+    }
+
+    /** Sets the j'th character of this string to be c. */
+    method void setCharAt(int j, char c) {
+        if (j > (length - 1)) {
+            //if requested index does not exsit throw "String index out of bounds"
+            do Sys.error(16);
+        }
+        let chars[j] = c;
+        return;
+    }
+
+    /** Appends the character c to the end of this String.
+    *  Returns this string as the return value. */
+    method String appendChar(char c) {
+        //Check if there is space in a char array to append
+        if (length = maxLength) {
+            do Sys.error(17);//String is full error.
+        }
+        let chars[length] = c;
+        let length = length + 1;//increment the length after adding the char
+        return this;
+    }
+
+    /** Erases the last character from this String. */
+    method void eraseLastChar() {
+        if (length = 0) {
+            // String is empty error.
+            do Sys.error(18);
+        }
+        let chars[length - 1] = 0;
+        let length = length - 1;//decrement 1 from length
+        return;
+    }
+
+    /** Returns the integer value of this String until the first non
+    *  numeric character. */
+    method int intValue() {
+        var int value, i, digit, character;
+        var boolean isNegative;
+
+        let value = 0;
+        let i = 0;
+        let isNegative = false;
+        while (i < length) {
+            let character = chars[i];
+            //check if the char's ASCII value follows the rules and is not negative
+            if (~((character < 48) & (character > 57))) {
+                let digit = character - 48;//converting to digit value 
+                let value = (value * 10) + digit;
+            } else { // if negative char should equal to 45
+                if ((character = 45) & ~isNegative) {
+                    let isNegative = true;
+                } else {
+                    let i = length - 1; // Break the loop.
+                }
+            }
+            let i = i + 1;//increment i until finish iterating througth the array of chars.
+        }
+
+        if (isNegative) {
+            let value = ~(value - 1);
+        }
+        return value;
+    }
+
+    /** Sets this String to hold a representation of the given number. */
+    method void setInt(int number) {
+        var int absVal, quotient, width;
+        var boolean isNegative;
+
+        // Clear the string.
+        do chars.dispose();
+        let chars = Array.new(maxLength);
+        let length = 0;
+
+        let absVal = Math.abs(number);
+
+        // Calculate the width of the number.
+        let quotient = number;
+        let width = 1;
+        let quotient = quotient / 10;
+        while (~(quotient = 0)) {
+            let width = width + 1;
+            let quotient = quotient / 10;
+        }
+
+        if (number < 0) {
+            // Add space for the negative sign.
+            let width = width + 1;
+            let isNegative = true;
+        }
+
+        if (width > maxLength) {
+            // Insufficient string capacity error.
+            do Sys.error(19);
+        }
+
+        if (isNegative) {
+            do appendChar(45); // Minus char.
+        }
+
+        // Recursively add the numbers to the string.
+        do intSetter(absVal);
+
+        return;
+    }
+
+    /**
+    * Makes a stack of digits then recursively appends them to string.*/
+    method void intSetter(int number) {
+        var int quotient, lastDigit;
+        var char c;
+
+        let quotient = number / 10;
+        let lastDigit = number - (10 * quotient);
+        let c = intToChar(lastDigit + 48);
+
+        if (~(number < 10)) {
+            do intSetter(quotient);//recursive call
+        }
+        do appendChar(c);
+
+        return;
+    }
+
+    /** Returns the ascii representation(position in table) of a certain number */
+    method char intToChar(int number) {
+        return number;
+    }
+
+    /** Returns the new line character. */
+    function char newLine() {
+        return 128;
+    }
+
+    /** Returns the backspace character. */
+    function char backSpace() {
+        return 129;
+    }
+
+    /** Returns the double quote (") character. */
+    function char doubleQuote() {
+        return 34;
+    }
+}

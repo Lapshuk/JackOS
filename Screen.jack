@@ -1,0 +1,195 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/* 
+ Chapter No. 12 – Project No.12 
+
+ Programmer: Roman Lapshuk 
+
+ Date Last Modified: May 6, 2015
+
+*/
+
+/**
+ * Graphic screen library.
+ */
+class Screen {
+
+    static boolean color;
+    static int screen,bits;
+    static Array POWERS_OF_TWO;
+
+    /**
+     * Initializes the Screen.
+     */
+    function void init() {
+        let color = true;
+        let screen = 16384;
+        let bits = 16;
+
+        let POWERS_OF_TWO = Array.new(16);
+        let POWERS_OF_TWO[0] = 1;
+        let POWERS_OF_TWO[1] = 2;
+        let POWERS_OF_TWO[2] = 4;
+        let POWERS_OF_TWO[3] = 8;
+        let POWERS_OF_TWO[4] = 16;
+        let POWERS_OF_TWO[5] = 32;
+        let POWERS_OF_TWO[6] = 64;
+        let POWERS_OF_TWO[7] = 128;
+        let POWERS_OF_TWO[8] = 256;
+        let POWERS_OF_TWO[9] = 512;
+        let POWERS_OF_TWO[10] = 1024;
+        let POWERS_OF_TWO[11] = 2048;
+        let POWERS_OF_TWO[12] = 4096;
+        let POWERS_OF_TWO[13] = 8192;
+        let POWERS_OF_TWO[14] = 16384;
+        let POWERS_OF_TWO[15] = (-32767 - 1);
+        return;
+    }
+
+    /**
+     * Erases the whole screen.
+     */
+    function void clearScreen() {
+        var int i;
+        let i = screen;//16384
+        while (i < 24575) {
+          do Memory.poke(i, false);//set all screen memory segment to zero
+          let i = i + 1;
+        }
+        return;
+    }
+
+    /**
+     * Sets the color to be used in further draw commands where
+     * white = false, black = true.
+     */
+    function void setColor(boolean b) {
+        let color = b;
+        return;
+    }
+
+    /**
+     * Draws the (x, y) pixel.
+     */
+    function void drawPixel(int x, int y) {
+        var int word, bit;
+        let word = (y * 32) + (x / bits);
+        let bit = POWERS_OF_TWO[x - ((x / bits) * bits)];
+
+        if (color) {
+            let screen[word] = screen[word] | bit;
+        } else {
+            let screen[word] = screen[word] & ~bit;
+        }
+        return;
+    }
+
+    /**
+     * Draws a line from pixel (x1, y1) to (x2, y2).
+     */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, a, b, absA, absB, xWay, yWay, adyMinusbdx;
+        var boolean xUpdate;
+        //check for legal values
+        if( x1 < 0 | y1 < 0 | x2 < 0 | y2 < 0 |        
+            x1 > 511 | y1 > 255 | x2 > 511 | y1 > 255) { 
+            //Illegal line coordinates error.
+            do Sys.error(8);
+        }
+        //difference of xs and ys
+        let dx = x2-x1;
+        let dy = y2-y1;
+
+        //find if x is increasing or decreasing
+        if(dx<0){
+            let xWay = -1;
+            let dx = -dx;//getting absolute value
+        } else {
+            let xWay = 1;
+        }
+        //find if y is increasing or decreasing
+        if(dy<0){
+            let yWay = -1;
+            let dy = -dy;//getting absolute value
+        } else {
+            let yWay = 1;
+        }
+
+        //if the line is horizontal need to change x values
+        if ((dy = 0)) {
+            let xUpdate = true;
+        } else {
+            // if the line is vertical no changes to x value needed
+            if((dx = 0)) { 
+                let xUpdate = false;
+            }
+        }
+        //modifiers of x and y values in terms of a and b should not be bigger 
+        //than the difference of x1 and x2 and y1 and y2
+        while(~(absA>dx) & ~(absB>dy)){
+            do Screen.drawPixel(x1 + a, y1 + b);
+
+            //if line is diagonal
+            if((dx > 0) & (dy > 0)) {
+                let xUpdate = (adyMinusbdx < 0);
+            }
+            //the a value changes to update x
+            if(xUpdate){
+                let a = a + xWay;//depending on the way can be pos or neg
+                //getting the absolute value of x modifier "a" to check if it 
+                //is not bigger then difference |x1-x2|(length)
+                let absA = Math.abs(a);
+                let adyMinusbdx = adyMinusbdx + dy;
+            } else {
+                //if it is not the x update then the y update by adding b.
+                let b = b + yWay;//depending on the way can be pos or neg
+                let absB = Math.abs(b);
+                let adyMinusbdx = adyMinusbdx - dx;
+            }
+        }
+        return;
+    }
+
+    /**
+     * Draws a filled rectangle where the top left corner is (x1, y1)
+     * and the bottom right corner is (x2, y2).
+     */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        //check for legal values
+        if( x1 < 0 | y1 < 0 | x2 < 0 | y2 < 0 |        
+            x1 > 511 | y1 > 255 | x2 > 511 | y1 > 255) { 
+            //Illegal line coordinates error. 
+            do Sys.error(8);
+        }
+        while (~(y1 = y2)) {
+            do Screen.drawLine(x1, y1, x2, y1);
+            let y1 = y1 + 1;
+        }
+        return;
+    }
+
+    /**
+     * Draws a filled circle of radius r around (cx, cy).
+     */
+    function void drawCircle(int cx, int cy, int r) {
+        var int dy, x;
+        if(cx < 0 | cx > 511 | cy < 0 | cy > 255){
+            do Sys.error(12);//Illegal center coordinates error
+        }
+        if(r < 0 | cx - r < 0 | cx + r > 511 | cy - r < 0 | cy + r > 255){
+            do Sys.error(13);//Illegal radius error
+        }
+        //use midpoint circle algorithm with drawline method
+        let dy = -r;
+        while (dy < r) {
+            //circle equation x^2 + y^2 - r^2 = 0;
+            let x = Math.sqrt((r * r) - (dy * dy));
+            do Screen.drawLine(cx - x, cy + dy, cx + x, cy + dy);
+            let dy = dy + 1;
+        }
+        return;
+    }
+}

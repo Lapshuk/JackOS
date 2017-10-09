@@ -1,0 +1,161 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+/* 
+ Chapter No. 12 – Project No.12 
+
+ Programmer: Roman Lapshuk 
+
+ Date Last Modified: May 6, 2015
+
+*/
+
+/**
+ * Memory operations library.
+ */ 
+class Memory {
+    static Array freeSpaceList;
+
+    /** Initializes memory parameters. */
+    function void init() {
+        let freeSpaceList = 2048;
+        let freeSpaceList[0] = 16384 - 2048 - 1;
+        let freeSpaceList[1] = -1;
+        return;
+    }
+
+    /** Returns the value of the main memory at the given address. */
+    function int peek(int address) {
+        var Array memory;
+        //adress must pe positive
+        if (address > 0) {
+            return memory[address];
+        }
+        do Sys.error(2);//Array size must be positive
+        return -1;
+    }
+
+    /** Sets the value of the main memory at this address
+    *  to the given value. */
+    function void poke(int address, int value) {
+        var Array memory;
+        //adress must pe positive
+        if (address > 0) {
+            let memory[address] = value;
+        } else {
+            do Sys.error(2);//Array size must be positive error
+        }
+        return;
+    }
+
+    /** Finds and allocates from the heap a memory block of the
+    *  specified size and returns a reference to its base address. */
+    function int alloc(int size) {
+        var Array current, best, previous, beforeBest, next;
+        var int currentSize, bestSize;
+        var boolean spaceFound;
+
+        if (size < 1) {
+            // Allocated memory size must be positive error.
+            do Sys.error(5);
+        }
+
+        // set previous and current to first open spot
+        let previous = freeSpaceList;
+        let current = freeSpaceList;
+        // set best size to the possible size
+        let bestSize = 16384 - 2048 - 1;
+        let spaceFound = false;
+    
+        // while there are more free spaces
+        while (~(current = -1)) {
+            // defragmentation process
+            // while the next piece is adjacent
+            while (current[1] = current + current[0] + 1) {
+                let next = current[1];
+                let current[1] = next[1];
+                let current[0] = next[0] + current[0] + 1;
+            }
+            if (~(current[0] < size) & ~(current[0] > bestSize)) {
+                let beforeBest = previous;
+                let bestSize = current[0];
+                let best = current;         
+                let spaceFound = true;        
+            }
+            // move to the next one
+            let previous = current;
+            let current = current[1];
+        }
+        if (spaceFound) {
+            // set current to unused block of free space
+            // perfect fit or only one space
+            if ((best[0] = size) | ((best[0] + 1) = size)) {
+                let next = best[1];
+            } else {
+                let next = best + size + 1;
+                // set the next of the empty space to the previous next 
+                // of the block that we are going to use 
+                let next[1] = best[1];
+                // set the size of the block created in the unused area 
+                // to the space left until the next block
+                let next[0] = best[0] - size - 1;
+                let best[0] = size;
+            }
+            // if it is not the first empty block
+            if (~(best = freeSpaceList)) {
+                let beforeBest[1] = next;
+            }
+            //if it is the first empty block
+            if (best = freeSpaceList) {
+                let freeSpaceList = next;
+            }
+            //return the start of the object
+            return best + 1;
+        }
+        // Heap overflow error
+        do Sys.error(6);
+        return -1;
+    }
+
+    /** De-allocates the given object and frees its space. */
+    function void deAlloc(int object) {
+        var int possiblePrev, possibleNext;
+        var Array current;
+
+        let current = object - 1;
+        if(object < freeSpaceList){
+            // insert at the begining of the list
+            let current[1] = freeSpaceList;
+            let freeSpaceList = current;
+        return;
+        }
+        if(freeSpaceList[1] = -1){
+            // insert at the end of the list
+            let freeSpaceList[1] = current;
+            let current[1] = -1;
+        }
+        let possibleNext = freeSpaceList;
+        while(true){
+            // move to next set
+            let possiblePrev = possibleNext;
+            let possibleNext = possibleNext[1];
+
+            // if object fits in between the two possible blocks
+            if((possiblePrev < object) & (possibleNext > object)){
+                let possiblePrev[1] = current;
+                let current[1] = possibleNext;
+                return;
+            }
+            // if we reached the end
+            if(possibleNext[1] = -1){
+                let possibleNext[1] = current;
+                let current[1] = -1;
+                return;
+            }
+        }
+        return;
+    }
+
+}
+
